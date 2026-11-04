@@ -1,0 +1,358 @@
+import { StyleSheet } from "react-native";
+
+export const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#F8FAFC" },
+  splashContainer: {
+    flex: 1,
+    backgroundColor: "#F8FAFC",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoBadge: {
+    width: 70,
+    height: 70,
+    borderRadius: 20,
+    backgroundColor: "#EBF3FA",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  splashTitle: { fontSize: 28, fontWeight: "bold", color: "#0F172A" },
+  splashSub: { fontSize: 13, color: "#475569", marginTop: 4 },
+
+  // Auth
+  authContainer: { flex: 1, justifyContent: "center", paddingHorizontal: 24 },
+  appTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#0F172A",
+    textAlign: "center",
+  },
+  appSubtitle: {
+    fontSize: 14,
+    color: "#64748B",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  inputGroup: { marginBottom: 14 },
+  label: { fontSize: 11, fontWeight: "700", color: "#475569", marginBottom: 6 },
+  input: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    color: "#0F172A",
+  },
+  primaryBtn: {
+    backgroundColor: "#1B5091",
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  primaryBtnText: { color: "#FFFFFF", fontWeight: "bold", fontSize: 15 },
+  switchText: { color: "#64748B", fontSize: 13, textAlign: "center" },
+
+  // Header Bar
+  headerBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    backgroundColor: "#FFFFFF",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  headerLogo: { fontSize: 20, fontWeight: "bold", color: "#0F172A" },
+  headerSub: { fontSize: 11, color: "#64748B" },
+  profileHeaderBtn: {
+    backgroundColor: "#EBF3FA",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#D0E1F4",
+  },
+  profileHeaderBtnText: { color: "#1B5091", fontSize: 13, fontWeight: "bold" },
+
+  // Quick SOS / Locate
+  sosCard: {
+    backgroundColor: "#EBF3FA",
+    padding: 16,
+    borderRadius: 14,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#D0E1F4",
+  },
+  sosTag: { color: "#1B5091", fontSize: 10, fontWeight: "bold" },
+  sosTitle: {
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "bold",
+    marginVertical: 4,
+  },
+  sosActionBtn: {
+    backgroundColor: "#1B5091",
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  sosActionText: { color: "#FFFFFF", fontWeight: "bold", fontSize: 12 },
+
+  // Active Filter Summary Pill
+  prefBar: {
+    backgroundColor: "#FFFFFF",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  prefBarText: { fontSize: 12, color: "#475569" },
+
+  sectionHeader: {
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  emptyCard: {
+    backgroundColor: "#FFFFFF",
+    padding: 24,
+    borderRadius: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#0F172A",
+    marginTop: 8,
+  },
+  emptySubText: {
+    fontSize: 12,
+    color: "#64748B",
+    marginTop: 2,
+    textAlign: "center",
+  },
+
+  // Bottom Sheet Drawer Modal
+  drawerOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    justifyContent: "flex-end",
+  },
+  drawerContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: "85%",
+  },
+  drawerHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#CBD5E1",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+
+  // Drawer User Header
+  userHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  avatarCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: "#EBF3FA",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  userName: { fontSize: 18, fontWeight: "bold", color: "#0F172A" },
+  userRole: { fontSize: 12, color: "#64748B" },
+
+  // Drawer Tabs
+  menuGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 16,
+  },
+  menuTabBtn: {
+    flex: 1,
+    minWidth: "45%",
+    backgroundColor: "#F8FAFC",
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    alignItems: "center",
+  },
+  menuTabActive: { backgroundColor: "#1B5091", borderColor: "#1B5091" },
+  menuTabText: { fontSize: 12, fontWeight: "700", color: "#334155" },
+  menuTabTextActive: { color: "#FFFFFF" },
+
+  // Drawer Section Content
+  drawerBody: { minHeight: 180 },
+  prefLabel: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#64748B",
+    marginBottom: 8,
+  },
+  filterRow: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  filterChip: {
+    flex: 1,
+    paddingVertical: 8,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  filterChipActive: { backgroundColor: "#1B5091" },
+  filterChipText: { fontSize: 11, fontWeight: "bold", color: "#475569" },
+  filterChipTextActive: { color: "#FFFFFF" },
+  toggleRow: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  toggleBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  toggleBtnActive: { backgroundColor: "#EBF3FA", borderColor: "#1B5091" },
+  toggleText: { fontSize: 11, fontWeight: "600", color: "#334155" },
+
+  // Info Cards (FAQ & Contact)
+  infoBox: {
+    backgroundColor: "#EBF3FA",
+    padding: 14,
+    borderRadius: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#D0E1F4",
+  },
+  infoQ: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#1B5091",
+    marginBottom: 4,
+  },
+  infoA: { fontSize: 12, color: "#334155", lineHeight: 18 },
+
+  logoutBtn: {
+    backgroundColor: "#FEF2F2",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 16,
+    borderWidth: 1,
+    borderColor: "#FCA5A5",
+  },
+  logoutText: { color: "#EF4444", fontWeight: "bold", fontSize: 13 },
+  closeDrawerBtn: {
+    backgroundColor: "#0F172A",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  closeDrawerText: { color: "#FFFFFF", fontWeight: "bold", fontSize: 13 },
+
+  // Navigation Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.5)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    maxHeight: "90%",
+  },
+  modalTag: { color: "#1B5091", fontSize: 11, fontWeight: "bold" },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#0F172A",
+    marginTop: 4,
+  },
+  modalFloor: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1B5091",
+    marginTop: 2,
+  },
+
+  // Map View
+  mapContainer: {
+    height: 160,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 14,
+    marginVertical: 12,
+    overflow: "hidden",
+    justifyContent: "space-between",
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+  },
+  mapPinUser: {
+    backgroundColor: "#1B5091",
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  mapPinTarget: {
+    backgroundColor: "#EF4444",
+    alignSelf: "flex-end",
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  mapPinText: { color: "#FFFFFF", fontSize: 10, fontWeight: "bold" },
+  mapRouteLine: {
+    height: 2,
+    backgroundColor: "#1B5091",
+    borderStyle: "dashed",
+    marginVertical: "auto",
+  },
+
+  navStepBox: {
+    backgroundColor: "#EBF3FA",
+    padding: 14,
+    borderRadius: 10,
+    marginBottom: 16,
+  },
+  navStepHeader: {
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#1B5091",
+    marginBottom: 6,
+  },
+  stepText: { fontSize: 12, color: "#334155", marginBottom: 4 },
+  closeModalBtn: {
+    backgroundColor: "#0F172A",
+    paddingVertical: 12,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+  closeModalText: { color: "#FFFFFF", fontWeight: "bold" },
+});

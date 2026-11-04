@@ -102,7 +102,7 @@ export default function Index() {
 
         if (data) {
           const formattedData: RestroomItem[] = data.map((item: any) => ({
-            id: item.restroom_id.toString(),
+            id: (item.restroom_id || item.id || Math.random()).toString(),
             building: item.buildings?.building_name || "Unknown Building",
             floor: item.Floor || "1st Floor",
             open_time: item.buildings?.open_time || "06:00",

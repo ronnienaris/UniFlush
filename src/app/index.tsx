@@ -38,7 +38,7 @@ function getDistanceInMeters(
 }
 
 export default function Index() {
-  const [screen, setScreen] = useState<"splash" | "auth" | "main">("splash");
+  const [screen, setScreen] = useState<"splash" | "auth" | "main">("auth");
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
   const [email, setEmail] = useState("");
@@ -50,7 +50,7 @@ export default function Index() {
     "favs" | "report" | "settings" | "faq"
   >("favs");
 
-  const [userName] = useState("Ronnie Strudwicke");
+  const [userName, setUserName] = useState("Ronnie Strudwicke");
   const [userGender, setUserGender] = useState<"all" | "male" | "female">(
     "all",
   );
@@ -60,7 +60,7 @@ export default function Index() {
   const [restrooms, setRestrooms] = useState<RestroomItem[]>([]);
   const [isLoadingRestrooms, setIsLoadingRestrooms] = useState<boolean>(true);
 
-  const [favorites, setFavorites] = useState<string[]>(["1"]); // Adjusted default favorite ID to match Supabase row IDs or building IDs
+  const [favorites, setFavorites] = useState<string[]>(["1"]);
   const [selectedSpot, setSelectedSpot] = useState<RestroomItem | null>(null);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -101,39 +101,41 @@ export default function Index() {
         }
 
         if (data) {
-          const formattedData: RestroomItem[] = data.map((item: any) => ({
-            id: (item.restroom_id || item.id || Math.random()).toString(),
-            building: item.buildings?.building_name || "Unknown Building",
-            floor: item.Floor || "1st Floor",
-            open_time: item.buildings?.open_time || "06:00",
-            close_time: item.buildings?.close_time || "20:00",
-            rating: 4.5,
-            totalRatings: 30,
-            cleanlinessScore: 4.5,
-            distanceMeter: 0,
-            accessType: item.buildings?.access_condition || "Open Access",
-            isAccessible: true,
-            gender: item.gender_type || "all",
-            features: {
-              bidet: item.has_bidet,
-              tissue: item.has_toilet_paper,
-              ac: item.has_air_con,
-              soap: item.has_soap,
-            },
-            coordinates: {
-              latitude: item.buildings?.latitude || 13.7563,
-              longitude: item.buildings?.longitude || 100.4934,
-            },
-            comments: [
-              {
-                id: "c1",
-                user: "TU Student",
-                score: 5,
-                comment: "Very clean and well maintained!",
-                date: "Today",
+          const formattedData: RestroomItem[] = data.map(
+            (item: any, index: number) => ({
+              id: (item.restroom_id || item.id || index + 1).toString(),
+              building: item.buildings?.building_name || "Unknown Building",
+              floor: item.Floor || "1st Floor",
+              open_time: item.buildings?.open_time || "06:00",
+              close_time: item.buildings?.close_time || "20:00",
+              rating: 4.5,
+              totalRatings: 30,
+              cleanlinessScore: 4.5,
+              distanceMeter: 0,
+              accessType: item.buildings?.access_condition || "Open Access",
+              isAccessible: true,
+              gender: item.gender_type || "all",
+              features: {
+                bidet: item.has_bidet,
+                tissue: item.has_toilet_paper,
+                ac: item.has_air_con,
+                soap: item.has_soap,
               },
-            ],
-          }));
+              coordinates: {
+                latitude: item.buildings?.latitude || 13.7563,
+                longitude: item.buildings?.longitude || 100.4934,
+              },
+              comments: [
+                {
+                  id: "c1",
+                  user: "TU Student",
+                  score: 5,
+                  comment: "Very clean and well maintained!",
+                  date: "Today",
+                },
+              ],
+            }),
+          );
 
           setRestrooms(formattedData);
           if (formattedData.length > 0) {
@@ -197,13 +199,67 @@ export default function Index() {
     })();
   }, []);
 
+  // --- AUTHENTICATION & LOGIN/REGISTER LOGIC ---
+  const handleAuthSubmit = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Error", "Please enter both email and password.");
+      return;
+    }
+
+    try {
+      if (authMode === "login") {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password: password.trim(),
+        });
+
+        if (error) {
+          Alert.alert("Login Error", error.message);
+          return;
+        }
+
+        if (data.user) {
+          setUserName(data.user.email || email);
+          setScreen("main");
+        }
+      } else {
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: password.trim(),
+          options: {
+            data: {
+              full_name: email.split("@")[0],
+            },
+          },
+        });
+
+        if (error) {
+          Alert.alert("Registration Error", error.message);
+          return;
+        }
+
+        Alert.alert(
+          "Success!",
+          "Account registered successfully. You can now log in.",
+        );
+        setAuthMode("login");
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      Alert.alert(
+        "Error",
+        "An unexpected error occurred during authentication.",
+      );
+    }
+  };
+
   const handleToggleFavorite = (id: string) => {
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id],
     );
   };
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!reviewSpot) return;
     if (!inputComment.trim()) {
       Alert.alert(
@@ -213,39 +269,60 @@ export default function Index() {
       return;
     }
 
-    setRestrooms((prev) =>
-      prev.map((item) => {
-        if (item.id === reviewSpot.id) {
-          const newTotal = item.totalRatings + 1;
-          const newCleanliness =
-            (item.cleanlinessScore * item.totalRatings +
-              inputCleanlinessScore) /
-            newTotal;
-          const newComment = {
-            id: Date.now().toString(),
-            user: userName,
-            score: inputCleanlinessScore,
-            comment: inputComment.trim(),
-            date: "Just now",
-          };
-          return {
-            ...item,
-            totalRatings: newTotal,
-            cleanlinessScore: newCleanliness,
-            comments: [newComment, ...(item.comments || [])],
-          };
-        }
-        return item;
-      }),
-    );
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id;
 
-    Alert.alert(
-      "Review Submitted!",
-      "Thank you for scoring cleanliness and leaving feedback.",
-    );
-    setReviewSpot(null);
-    setInputComment("");
-    setInputCleanlinessScore(5);
+      const { error } = await supabase.from("Rating").insert([
+        {
+          restroom_id: parseInt(reviewSpot.id, 10),
+          profile_id: userId,
+          cleanliness_score: inputCleanlinessScore,
+          comment: inputComment.trim(),
+        },
+      ]);
+
+      if (error) {
+        Alert.alert(
+          "Error",
+          "Failed to save review to Supabase: " + error.message,
+        );
+        return;
+      }
+
+      setRestrooms((prev) =>
+        prev.map((item) => {
+          if (item.id === reviewSpot.id) {
+            const newTotal = item.totalRatings + 1;
+            const newCleanliness =
+              (item.cleanlinessScore * item.totalRatings +
+                inputCleanlinessScore) /
+              newTotal;
+            const newComment = {
+              id: Date.now().toString(),
+              user: userName,
+              score: inputCleanlinessScore,
+              comment: inputComment.trim(),
+              date: "Just now",
+            };
+            return {
+              ...item,
+              totalRatings: newTotal,
+              cleanlinessScore: newCleanliness,
+              comments: [newComment, ...(item.comments || [])],
+            };
+          }
+          return item;
+        }),
+      );
+
+      Alert.alert("Thank you for your Feedback!");
+      setReviewSpot(null);
+      setInputComment("");
+      setInputCleanlinessScore(5);
+    } catch (err) {
+      console.error("Error submitting review:", err);
+    }
   };
 
   const handleProfileIssueSubmit = () => {
@@ -352,7 +429,7 @@ export default function Index() {
 
           <TouchableOpacity
             style={styles.primaryBtn}
-            onPress={() => setScreen("main")}
+            onPress={handleAuthSubmit}
           >
             <Text style={styles.primaryBtnText}>
               {authMode === "login" ? "Log In" : "Sign Up"}
@@ -480,7 +557,7 @@ export default function Index() {
                 <Text
                   style={{ fontSize: 20, fontWeight: "bold", color: "#1B5091" }}
                 >
-                  {userName.charAt(0)}
+                  {userName.charAt(0).toUpperCase()}
                 </Text>
               </View>
               <View>
@@ -591,7 +668,6 @@ export default function Index() {
                 </View>
               )}
 
-              {/* REPORT ISSUE TAB INSIDE PROFILE */}
               {drawerTab === "report" && (
                 <View>
                   <Text style={styles.sectionHeader}>

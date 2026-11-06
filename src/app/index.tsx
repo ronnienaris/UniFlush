@@ -7,15 +7,29 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Linking,
   Modal,
+  Platform,
   SafeAreaView,
   ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker, Polyline } from "react-native-maps";
+
+// Conditionally import MapView only on native platforms to prevent web build crashes
+let MapView: any = null;
+let Marker: any = null;
+let Polyline: any = null;
+
+if (Platform.OS !== "web") {
+  const Maps = require("react-native-maps");
+  MapView = Maps.default;
+  Marker = Maps.Marker;
+  Polyline = Maps.Polyline;
+}
 
 function getDistanceInMeters(
   lat1: number,
@@ -971,7 +985,51 @@ export default function Index() {
               📍 Target: {selectedSpot?.floor}
             </Text>
 
-            {selectedSpot?.coordinates ? (
+            {Platform.OS === "web" ? (
+              <View style={localStyles.webMapFallback}>
+                <Text style={{ fontSize: 32, marginBottom: 8 }}>🗺️</Text>
+                <Text
+                  style={{
+                    fontWeight: "bold",
+                    color: "#1E293B",
+                    marginBottom: 4,
+                  }}
+                >
+                  Interactive Map Preview
+                </Text>
+                <Text
+                  style={{
+                    fontSize: 13,
+                    color: "#64748B",
+                    textAlign: "center",
+                    marginBottom: 12,
+                  }}
+                >
+                  Interactive maps are optimized for the UniFlush mobile app.
+                </Text>
+                <TouchableOpacity
+                  style={localStyles.webMapBtn}
+                  onPress={() => {
+                    const lat = selectedSpot?.coordinates?.latitude || 13.7563;
+                    const lon =
+                      selectedSpot?.coordinates?.longitude || 100.4934;
+                    Linking.openURL(
+                      `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`,
+                    );
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#FFFFFF",
+                      fontWeight: "600",
+                      fontSize: 13,
+                    }}
+                  >
+                    Open in Google Maps ↗
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ) : selectedSpot?.coordinates ? (
               <MapView
                 style={{ height: 230, borderRadius: 14, marginVertical: 12 }}
                 initialRegion={{
@@ -1037,3 +1095,23 @@ export default function Index() {
     </SafeAreaView>
   );
 }
+
+const localStyles = StyleSheet.create({
+  webMapFallback: {
+    height: 230,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    marginVertical: 12,
+  },
+  webMapBtn: {
+    backgroundColor: "#1B5091",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+});

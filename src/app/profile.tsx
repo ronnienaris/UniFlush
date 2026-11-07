@@ -10,9 +10,10 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Tapping anywhere on this dark overlay triggers handleClose */}
-      <Pressable style={styles.backdrop} onPress={handleClose} />
+      {/* 1. Clickable blank space at the top (covers the upper part of the screen to exit on tap) */}
+      <Pressable style={styles.topSpacer} onPress={handleClose} />
 
+      {/* 2. The profile card at the bottom */}
       <View style={styles.modalCard}>
         <View style={styles.handleBar} />
 
@@ -36,11 +37,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "transparent",
+    backgroundColor: "rgba(0, 0, 0, 0.4)", // Dark semi-transparent overlay for the whole screen
   },
-  backdrop: {
-    ...StyleSheet.absoluteFill,
-    backgroundColor: "rgba(0, 0, 0, 0.4)",
+  topSpacer: {
+    flex: 1, // Fills all the empty space above the card and listens for taps to exit!
   },
   modalCard: {
     backgroundColor: "#FFFFFF",

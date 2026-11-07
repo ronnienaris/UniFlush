@@ -64,7 +64,7 @@ export default function Index() {
     "favs" | "report" | "settings" | "faq"
   >("favs");
 
-  const [userName, setUserName] = useState("Ronnie Strudwicke");
+  const [userName, setUserName] = useState("รอนนี่ นริศ สตุดวิค");
   const [userGender, setUserGender] = useState<"all" | "male" | "female">(
     "all",
   );
@@ -555,14 +555,20 @@ export default function Index() {
         )}
       </ScrollView>
 
-      {/* PROFILE BOTTOM SHEET DRAWER MODAL */}
+      {/* PROFILE BOTTOM SHEET DRAWER MODAL WITH BACKDROP TAP TO DISMISS */}
       <Modal
         visible={isDrawerOpen}
-        animationType="slide"
+        animationType="fade"
         transparent
         onRequestClose={() => setIsDrawerOpen(false)}
       >
-        <View style={styles.drawerOverlay}>
+        <View style={localStyles.drawerOverlay}>
+          <TouchableOpacity
+            style={localStyles.backdropPressable}
+            activeOpacity={1}
+            onPress={() => setIsDrawerOpen(false)}
+          />
+
           <View style={styles.drawerContent}>
             <View style={styles.drawerHandle} />
 
@@ -577,6 +583,9 @@ export default function Index() {
               <View>
                 <Text style={styles.userName}>{userName}</Text>
                 <Text style={styles.userRole}>Thammasat Student Account</Text>
+                <Text style={{ fontSize: 13, color: "#64748B" }}>
+                  ID: 6823765109 • College of Innovation (DX)
+                </Text>
               </View>
             </View>
 
@@ -892,14 +901,19 @@ export default function Index() {
         </View>
       </Modal>
 
-      {/* CLEANLINESS REVIEW & SCORE MODAL */}
+      {/* CLEANLINESS REVIEW & SCORE MODAL WITH BACKDROP TAP TO DISMISS */}
       <Modal
         visible={!!reviewSpot}
-        animationType="slide"
+        animationType="fade"
         transparent
         onRequestClose={() => setReviewSpot(null)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={localStyles.drawerOverlay}>
+          <TouchableOpacity
+            style={localStyles.backdropPressable}
+            activeOpacity={1}
+            onPress={() => setReviewSpot(null)}
+          />
           <View style={styles.modalContent}>
             <Text style={styles.modalTag}>RESTROOM CLEANLINESS REVIEW</Text>
             <Text style={styles.modalTitle}>{reviewSpot?.building}</Text>
@@ -970,14 +984,19 @@ export default function Index() {
         </View>
       </Modal>
 
-      {/* LIVE MAP ROUTE MODAL */}
+      {/* LIVE MAP ROUTE MODAL WITH BACKDROP TAP TO DISMISS */}
       <Modal
         visible={!!selectedSpot}
-        animationType="slide"
+        animationType="fade"
         transparent
         onRequestClose={() => setSelectedSpot(null)}
       >
-        <View style={styles.modalOverlay}>
+        <View style={localStyles.drawerOverlay}>
+          <TouchableOpacity
+            style={localStyles.backdropPressable}
+            activeOpacity={1}
+            onPress={() => setSelectedSpot(null)}
+          />
           <View style={styles.modalContent}>
             <Text style={styles.modalTag}>THA PRACHAN LIVE NAVIGATION</Text>
             <Text style={styles.modalTitle}>{selectedSpot?.building}</Text>
@@ -1113,5 +1132,13 @@ const localStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 8,
+  },
+  drawerOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
+  },
+  backdropPressable: {
+    ...StyleSheet.absoluteFill,
   },
 });

@@ -65,7 +65,10 @@ export default function Index() {
     "favs" | "report" | "settings" | "faq"
   >("favs");
 
-  const [userName, setUserName] = useState("รอนนี่ นริศ สตุดวิค");
+  // Dynamic user states (Fixes item #1)
+  const [userName, setUserName] = useState("Student");
+  const [userStudentId, setUserStudentId] = useState("6823765109");
+
   const [userGender, setUserGender] = useState<"all" | "male" | "female">(
     "all",
   );
@@ -76,7 +79,7 @@ export default function Index() {
   const [isLoadingRestrooms, setIsLoadingRestrooms] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<boolean>(false);
 
-  const [favorites, setFavorites] = useState<string[]>(["1"]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [selectedSpot, setSelectedSpot] = useState<RestroomItem | null>(null);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
@@ -97,7 +100,60 @@ export default function Index() {
   const [reportDescription, setReportDescription] = useState<string>("");
   const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
 
-  // Fetch live data from Supabase with full error handling & retry support
+  // Fetch logged-in user details dynamically (Item #1)
+  useEffect(() => {
+    async function loadUserData() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          if (user.email) setUserName(user.email);
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
+
+          if (profileData) {
+            if (profileData.full_name) setUserName(profileData.full_name);
+            if (profileData.student_id)
+              setUserStudentId(profileData.student_id);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading user profile:", err);
+      }
+    }
+    loadUserData();
+  }, []);
+
+  // Load favorites from Supabase on startup (Item #3)
+  useEffect(() => {
+    async function loadFavorites() {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data, error } = await supabase
+          .from("favorite_restrooms")
+          .select("favorite_ids")
+          .eq("user_id", user.id)
+          .single();
+
+        if (data && data.favorite_ids) {
+          setFavorites(data.favorite_ids);
+        }
+      } catch (err) {
+        console.error("Error loading favorites:", err);
+      }
+    }
+    loadFavorites();
+  }, []);
+
+  // Fetch live data from Supabase with dynamic rating calculations (Item #2)
   async function fetchSupabaseRestrooms() {
     try {
       setIsLoadingRestrooms(true);
@@ -111,6 +167,9 @@ export default function Index() {
             open_time,
             close_time,
             access_condition
+          ),
+          Rating (
+            cleanliness_score
           )
         `);
 
@@ -122,39 +181,45 @@ export default function Index() {
 
       if (data) {
         const formattedData: RestroomItem[] = data.map(
-          (item: any, index: number) => ({
-            id: (item.restroom_id || item.id || index + 1).toString(),
-            building: item.buildings?.building_name || "Unknown Building",
-            floor: item.Floor || "1st Floor",
-            open_time: item.buildings?.open_time || "06:00",
-            close_time: item.buildings?.close_time || "20:00",
-            rating: 4.5,
-            totalRatings: 30,
-            cleanlinessScore: 4.5,
-            distanceMeter: 0,
-            accessType: item.buildings?.access_condition || "Open Access",
-            isAccessible: true,
-            gender: item.gender_type || "all",
-            features: {
-              bidet: item.has_bidet,
-              tissue: item.has_toilet_paper,
-              ac: item.has_air_con,
-              soap: item.has_soap,
-            },
-            coordinates: {
-              latitude: item.buildings?.latitude || 13.7563,
-              longitude: item.buildings?.longitude || 100.4934,
-            },
-            comments: [
-              {
-                id: "c1",
-                user: "TU Student",
-                score: 5,
-                comment: "Very clean and well maintained!",
-                date: "Today",
+          (item: any, index: number) => {
+            const ratingsList = item.Rating || [];
+            const totalRatings = ratingsList.length;
+
+            let cleanlinessScore = 0;
+            if (totalRatings > 0) {
+              const sum = ratingsList.reduce(
+                (acc: number, r: any) => acc + (r.cleanliness_score || 0),
+                0,
+              );
+              cleanlinessScore = Number((sum / totalRatings).toFixed(1));
+            }
+
+            return {
+              id: (item.restroom_id || item.id || index + 1).toString(),
+              building: item.buildings?.building_name || "Unknown Building",
+              floor: item.Floor || "1st Floor",
+              open_time: item.buildings?.open_time || "06:00",
+              close_time: item.buildings?.close_time || "20:00",
+              rating: cleanlinessScore,
+              totalRatings: totalRatings,
+              cleanlinessScore: cleanlinessScore,
+              distanceMeter: 0,
+              accessType: item.buildings?.access_condition || "Open Access",
+              isAccessible: true,
+              gender: item.gender_type || "all",
+              features: {
+                bidet: item.has_bidet,
+                tissue: item.has_toilet_paper,
+                ac: item.has_air_con,
+                soap: item.has_soap,
               },
-            ],
-          }),
+              coordinates: {
+                latitude: item.buildings?.latitude || 13.7563,
+                longitude: item.buildings?.longitude || 100.4934,
+              },
+              comments: [],
+            };
+          },
         );
 
         setRestrooms(formattedData);
@@ -226,7 +291,7 @@ export default function Index() {
     })();
   }, []);
 
-  // --- AUTHENTICATION & LOGIN/REGISTER LOGIC WITH LOADING STATE ---
+  // --- AUTHENTICATION & LOGIN/REGISTER LOGIC ---
   const handleAuthSubmit = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Please enter both email and password.");
@@ -283,10 +348,27 @@ export default function Index() {
     }
   };
 
-  const handleToggleFavorite = (id: string) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((favId) => favId !== id) : [...prev, id],
-    );
+  // --- TOGGLE & PERSIST FAVORITES (Item #3) ---
+  const handleToggleFavorite = async (id: string) => {
+    const updatedFavorites = favorites.includes(id)
+      ? favorites.filter((favId) => favId !== id)
+      : [...favorites, id];
+
+    setFavorites(updatedFavorites);
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("favorite_restrooms").upsert({
+          user_id: user.id,
+          favorite_ids: updatedFavorites,
+        });
+      }
+    } catch (err) {
+      console.error("Error saving favorite to Supabase:", err);
+    }
   };
 
   // --- REVIEW SUBMISSION WITH LOADING STATE ---
@@ -322,31 +404,8 @@ export default function Index() {
         return;
       }
 
-      setRestrooms((prev) =>
-        prev.map((item) => {
-          if (item.id === reviewSpot.id) {
-            const newTotal = item.totalRatings + 1;
-            const newCleanliness =
-              (item.cleanlinessScore * item.totalRatings +
-                inputCleanlinessScore) /
-              newTotal;
-            const newComment = {
-              id: Date.now().toString(),
-              user: userName,
-              score: inputCleanlinessScore,
-              comment: inputComment.trim(),
-              date: "Just now",
-            };
-            return {
-              ...item,
-              totalRatings: newTotal,
-              cleanlinessScore: newCleanliness,
-              comments: [newComment, ...(item.comments || [])],
-            };
-          }
-          return item;
-        }),
-      );
+      // Re-fetch rooms to update live averages
+      await fetchSupabaseRestrooms();
 
       Alert.alert("Thank you for your Feedback!");
       setReviewSpot(null);
@@ -409,7 +468,6 @@ export default function Index() {
     if (restrooms.length === 0) return;
 
     const currentHour = new Date().getHours();
-    // Filter only currently open restrooms based on open_time and close_time
     const openRestrooms = restrooms.filter((item) => {
       const openH = parseInt(item.open_time.split(":")[0], 10) || 6;
       const closeH = parseInt(item.close_time.split(":")[0], 10) || 20;
@@ -711,7 +769,7 @@ export default function Index() {
                 <Text style={styles.userName}>{userName}</Text>
                 <Text style={styles.userRole}>Thammasat Student Account</Text>
                 <Text style={{ fontSize: 13, color: "#64748B" }}>
-                  ID: 6823765109 • College of Innovation (DX)
+                  ID: {userStudentId} • College of Innovation (DX)
                 </Text>
               </View>
             </View>

@@ -57,6 +57,7 @@ export default function Index() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState<boolean>(false);
@@ -73,6 +74,7 @@ export default function Index() {
 
   const [restrooms, setRestrooms] = useState<RestroomItem[]>([]);
   const [isLoadingRestrooms, setIsLoadingRestrooms] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<boolean>(false);
 
   const [favorites, setFavorites] = useState<string[]>(["1"]);
   const [selectedSpot, setSelectedSpot] = useState<RestroomItem | null>(null);
@@ -80,89 +82,96 @@ export default function Index() {
     latitude: number;
     longitude: number;
   } | null>(null);
+  const [locationDenied, setIsLocationDenied] = useState<boolean>(false);
 
   // Review & Rating Modal state
   const [reviewSpot, setReviewSpot] = useState<RestroomItem | null>(null);
   const [inputCleanlinessScore, setInputCleanlinessScore] = useState<number>(5);
   const [inputComment, setInputComment] = useState<string>("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState<boolean>(false);
 
   // Profile Tab Issue Report state
   const [reportRestroomTarget, setReportRestroomTarget] = useState<string>("1");
   const [reportIssueType, setReportIssueType] =
     useState<string>("Out of Tissue");
   const [reportDescription, setReportDescription] = useState<string>("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
 
-  // Fetch live data from Supabase
-  useEffect(() => {
-    async function fetchSupabaseRestrooms() {
-      try {
-        setIsLoadingRestrooms(true);
-        const { data, error } = await supabase.from("restrooms").select(`
-            *,
-            buildings (
-              building_name,
-              latitude,
-              longitude,
-              open_time,
-              close_time,
-              access_condition
-            )
-          `);
+  // Fetch live data from Supabase with full error handling & retry support
+  async function fetchSupabaseRestrooms() {
+    try {
+      setIsLoadingRestrooms(true);
+      setLoadError(false);
+      const { data, error } = await supabase.from("restrooms").select(`
+          *,
+          buildings (
+            building_name,
+            latitude,
+            longitude,
+            open_time,
+            close_time,
+            access_condition
+          )
+        `);
 
-        if (error) {
-          console.error("❌ Supabase fetch error:", error.message);
-          return;
-        }
-
-        if (data) {
-          const formattedData: RestroomItem[] = data.map(
-            (item: any, index: number) => ({
-              id: (item.restroom_id || item.id || index + 1).toString(),
-              building: item.buildings?.building_name || "Unknown Building",
-              floor: item.Floor || "1st Floor",
-              open_time: item.buildings?.open_time || "06:00",
-              close_time: item.buildings?.close_time || "20:00",
-              rating: 4.5,
-              totalRatings: 30,
-              cleanlinessScore: 4.5,
-              distanceMeter: 0,
-              accessType: item.buildings?.access_condition || "Open Access",
-              isAccessible: true,
-              gender: item.gender_type || "all",
-              features: {
-                bidet: item.has_bidet,
-                tissue: item.has_toilet_paper,
-                ac: item.has_air_con,
-                soap: item.has_soap,
-              },
-              coordinates: {
-                latitude: item.buildings?.latitude || 13.7563,
-                longitude: item.buildings?.longitude || 100.4934,
-              },
-              comments: [
-                {
-                  id: "c1",
-                  user: "TU Student",
-                  score: 5,
-                  comment: "Very clean and well maintained!",
-                  date: "Today",
-                },
-              ],
-            }),
-          );
-
-          setRestrooms(formattedData);
-          if (formattedData.length > 0) {
-            setReportRestroomTarget(formattedData[0].id);
-          }
-        }
-      } catch (err) {
-        console.error("Unexpected error fetching restrooms:", err);
-      } finally {
-        setIsLoadingRestrooms(false);
+      if (error) {
+        console.error("❌ Supabase fetch error:", error.message);
+        setLoadError(true);
+        return;
       }
-    }
 
+      if (data) {
+        const formattedData: RestroomItem[] = data.map(
+          (item: any, index: number) => ({
+            id: (item.restroom_id || item.id || index + 1).toString(),
+            building: item.buildings?.building_name || "Unknown Building",
+            floor: item.Floor || "1st Floor",
+            open_time: item.buildings?.open_time || "06:00",
+            close_time: item.buildings?.close_time || "20:00",
+            rating: 4.5,
+            totalRatings: 30,
+            cleanlinessScore: 4.5,
+            distanceMeter: 0,
+            accessType: item.buildings?.access_condition || "Open Access",
+            isAccessible: true,
+            gender: item.gender_type || "all",
+            features: {
+              bidet: item.has_bidet,
+              tissue: item.has_toilet_paper,
+              ac: item.has_air_con,
+              soap: item.has_soap,
+            },
+            coordinates: {
+              latitude: item.buildings?.latitude || 13.7563,
+              longitude: item.buildings?.longitude || 100.4934,
+            },
+            comments: [
+              {
+                id: "c1",
+                user: "TU Student",
+                score: 5,
+                comment: "Very clean and well maintained!",
+                date: "Today",
+              },
+            ],
+          }),
+        );
+
+        setRestrooms(formattedData);
+        if (formattedData.length > 0) {
+          setReportRestroomTarget(formattedData[0].id);
+        }
+        setLoadError(false);
+      }
+    } catch (err) {
+      console.error("Unexpected error fetching restrooms:", err);
+      setLoadError(true);
+    } finally {
+      setIsLoadingRestrooms(false);
+    }
+  }
+
+  useEffect(() => {
     fetchSupabaseRestrooms();
   }, []);
 
@@ -176,7 +185,11 @@ export default function Index() {
   useEffect(() => {
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") return;
+      if (status !== "granted") {
+        setIsLocationDenied(true);
+        return;
+      }
+      setIsLocationDenied(false);
 
       let location = await Location.getCurrentPositionAsync({});
       const initCoords = {
@@ -213,13 +226,14 @@ export default function Index() {
     })();
   }, []);
 
-  // --- AUTHENTICATION & LOGIN/REGISTER LOGIC ---
+  // --- AUTHENTICATION & LOGIN/REGISTER LOGIC WITH LOADING STATE ---
   const handleAuthSubmit = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert("Error", "Please enter both email and password.");
       return;
     }
 
+    setIsAuthLoading(true);
     try {
       if (authMode === "login") {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -264,6 +278,8 @@ export default function Index() {
         "Error",
         "An unexpected error occurred during authentication.",
       );
+    } finally {
+      setIsAuthLoading(false);
     }
   };
 
@@ -273,6 +289,7 @@ export default function Index() {
     );
   };
 
+  // --- REVIEW SUBMISSION WITH LOADING STATE ---
   const handleSubmitReview = async () => {
     if (!reviewSpot) return;
     if (!inputComment.trim()) {
@@ -283,6 +300,7 @@ export default function Index() {
       return;
     }
 
+    setIsSubmittingReview(true);
     try {
       const { data: authData } = await supabase.auth.getUser();
       const userId = authData.user?.id;
@@ -336,10 +354,13 @@ export default function Index() {
       setInputCleanlinessScore(5);
     } catch (err) {
       console.error("Error submitting review:", err);
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
 
-  const handleProfileIssueSubmit = () => {
+  // --- PROFILE ISSUE REPORTING & SUPABASE INSERT ---
+  const handleProfileIssueSubmit = async () => {
     if (!reportDescription.trim()) {
       Alert.alert(
         "Missing Description",
@@ -348,19 +369,69 @@ export default function Index() {
       return;
     }
 
-    Alert.alert(
-      "Thank you for reporting!",
-      "Your report has been received by campus maintenance.",
-    );
-    setReportDescription("");
+    setIsSubmittingReport(true);
+    try {
+      const { data: authData } = await supabase.auth.getUser();
+      const userId = authData.user?.id;
+
+      const { error } = await supabase.from("issue Reporting").insert([
+        {
+          Restroom_id: parseInt(reportRestroomTarget, 10),
+          profile_id: userId,
+          issue_type: reportIssueType,
+          description: reportDescription.trim(),
+        },
+      ]);
+
+      if (error) {
+        Alert.alert(
+          "Submission Error",
+          "Failed to save issue report: " + error.message,
+        );
+        return;
+      }
+
+      Alert.alert(
+        "Thank you for reporting!",
+        "Your report has been logged successfully to campus maintenance.",
+      );
+      setReportDescription("");
+    } catch (err) {
+      console.error("Error reporting issue:", err);
+      Alert.alert("Error", "An unexpected error occurred while reporting.");
+    } finally {
+      setIsSubmittingReport(false);
+    }
   };
 
+  // --- NAVIGATE: LOCATE NEAREST OPEN RESTROOM FILTER (US-2 AC3) ---
   const handleLocateNearest = () => {
     if (restrooms.length === 0) return;
-    const sorted = [...restrooms].sort(
+
+    const currentHour = new Date().getHours();
+    // Filter only currently open restrooms based on open_time and close_time
+    const openRestrooms = restrooms.filter((item) => {
+      const openH = parseInt(item.open_time.split(":")[0], 10) || 6;
+      const closeH = parseInt(item.close_time.split(":")[0], 10) || 20;
+      return currentHour >= openH && currentHour < closeH;
+    });
+
+    if (openRestrooms.length === 0) {
+      Alert.alert(
+        "Notice",
+        "No open restrooms available at this moment. Showing all nearest restrooms instead.",
+      );
+      const sorted = [...restrooms].sort(
+        (a, b) => a.distanceMeter - b.distanceMeter,
+      );
+      setSelectedSpot(sorted[0]);
+      return;
+    }
+
+    const sortedOpen = [...openRestrooms].sort(
       (a, b) => a.distanceMeter - b.distanceMeter,
     );
-    setSelectedSpot(sorted[0]);
+    setSelectedSpot(sortedOpen[0]);
   };
 
   const filteredRestrooms = restrooms
@@ -426,6 +497,7 @@ export default function Index() {
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
+              autoCapitalize="none"
             />
           </View>
 
@@ -442,12 +514,20 @@ export default function Index() {
           </View>
 
           <TouchableOpacity
-            style={styles.primaryBtn}
+            style={[
+              styles.primaryBtn,
+              isAuthLoading && { backgroundColor: "#94A3B8" },
+            ]}
             onPress={handleAuthSubmit}
+            disabled={isAuthLoading}
           >
-            <Text style={styles.primaryBtnText}>
-              {authMode === "login" ? "Log In" : "Sign Up"}
-            </Text>
+            {isAuthLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.primaryBtnText}>
+                {authMode === "login" ? "Log In" : "Sign Up"}
+              </Text>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -490,6 +570,19 @@ export default function Index() {
         <View style={styles.sosCard}>
           <Text style={styles.sosTag}>CAMPUS NAVIGATION SYSTEM</Text>
           <Text style={styles.sosTitle}>Locate Nearest Campus Restroom</Text>
+          {locationDenied && (
+            <Text
+              style={{
+                color: "#D97706",
+                fontSize: 12,
+                marginBottom: 8,
+                fontWeight: "600",
+              }}
+            >
+              ⚠️ Location permission denied. You can select restrooms manually
+              below.
+            </Text>
+          )}
           <TouchableOpacity
             style={styles.sosActionBtn}
             onPress={handleLocateNearest}
@@ -533,6 +626,40 @@ export default function Index() {
               Loading campus restrooms from Supabase...
             </Text>
           </View>
+        ) : loadError ? (
+          <View style={localStyles.errorContainer}>
+            <Text style={{ fontSize: 32, marginBottom: 8 }}>⚠️</Text>
+            <Text
+              style={{
+                fontWeight: "bold",
+                color: "#EF4444",
+                marginBottom: 4,
+                fontSize: 16,
+              }}
+            >
+              Failed to load restroom data.
+            </Text>
+            <Text
+              style={{
+                fontSize: 13,
+                color: "#64748B",
+                textAlign: "center",
+                marginBottom: 12,
+              }}
+            >
+              Please check your network connection and try again.
+            </Text>
+            <TouchableOpacity
+              style={localStyles.retryBtn}
+              onPress={fetchSupabaseRestrooms}
+            >
+              <Text
+                style={{ color: "#FFFFFF", fontWeight: "600", fontSize: 13 }}
+              >
+                Retry
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : filteredRestrooms.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={{ fontSize: 32 }}>🔍</Text>
@@ -555,7 +682,7 @@ export default function Index() {
         )}
       </ScrollView>
 
-      {/* PROFILE BOTTOM SHEET DRAWER MODAL WITH BACKDROP TAP TO DISMISS */}
+      {/* PROFILE BOTTOM SHEET DRAWER MODAL */}
       <Modal
         visible={isDrawerOpen}
         animationType="fade"
@@ -784,12 +911,23 @@ export default function Index() {
                   />
 
                   <TouchableOpacity
-                    style={[styles.primaryBtn, { backgroundColor: "#1B5091" }]}
+                    style={[
+                      styles.primaryBtn,
+                      {
+                        backgroundColor: "#1B5091",
+                        opacity: isSubmittingReport ? 0.7 : 1,
+                      },
+                    ]}
                     onPress={handleProfileIssueSubmit}
+                    disabled={isSubmittingReport}
                   >
-                    <Text style={styles.primaryBtnText}>
-                      Submit Issue Report
-                    </Text>
+                    {isSubmittingReport ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.primaryBtnText}>
+                        Submit Issue Report
+                      </Text>
+                    )}
                   </TouchableOpacity>
                 </View>
               )}
@@ -901,7 +1039,7 @@ export default function Index() {
         </View>
       </Modal>
 
-      {/* CLEANLINESS REVIEW & SCORE MODAL WITH BACKDROP TAP TO DISMISS */}
+      {/* CLEANLINESS REVIEW & SCORE MODAL */}
       <Modal
         visible={!!reviewSpot}
         animationType="fade"
@@ -965,13 +1103,22 @@ export default function Index() {
             <TouchableOpacity
               style={[
                 styles.primaryBtn,
-                { backgroundColor: "#1B5091", marginBottom: 10 },
+                {
+                  backgroundColor: "#1B5091",
+                  marginBottom: 10,
+                  opacity: isSubmittingReview ? 0.7 : 1,
+                },
               ]}
               onPress={handleSubmitReview}
+              disabled={isSubmittingReview}
             >
-              <Text style={styles.primaryBtnText}>
-                Submit Cleanliness Review
-              </Text>
+              {isSubmittingReview ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryBtnText}>
+                  Submit Cleanliness Review
+                </Text>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -984,7 +1131,7 @@ export default function Index() {
         </View>
       </Modal>
 
-      {/* LIVE MAP ROUTE MODAL WITH BACKDROP TAP TO DISMISS */}
+      {/* LIVE MAP ROUTE MODAL */}
       <Modal
         visible={!!selectedSpot}
         animationType="fade"
@@ -1126,6 +1273,23 @@ const localStyles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     marginVertical: 12,
+  },
+  errorContainer: {
+    height: 200,
+    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    marginVertical: 12,
+  },
+  retryBtn: {
+    backgroundColor: "#EF4444",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   webMapBtn: {
     backgroundColor: "#1B5091",

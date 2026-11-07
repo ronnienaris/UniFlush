@@ -5,19 +5,16 @@ export default function ProfileScreen() {
   const router = useRouter();
 
   const handleClose = () => {
-    // Navigates back to the main map/home page when clicking outside or the top spacer
     router.back();
   };
 
   return (
-    /* 1. Backdrop overlay covering the screen */
-    <Pressable style={styles.backdrop} onPress={handleClose}>
-      {/* 2. Empty space at the top — tapping here exits straight to the main page */}
-      <View style={styles.topSpacer} />
+    <View style={styles.container}>
+      {/* 1. Full-screen absolute backdrop that catches any tap outside */}
+      <Pressable style={styles.backdrop} onPress={handleClose} />
 
-      {/* 3. The main profile content card 
-          'onPress={(e) => e.stopPropagation()}' prevents taps inside the card from closing it */}
-      <Pressable style={styles.modalCard} onPress={(e) => e.stopPropagation()}>
+      {/* 2. Modal content card anchored at the bottom */}
+      <View style={styles.modalCard}>
         <View style={styles.handleBar} />
 
         <Text style={styles.title}>Student Profile</Text>
@@ -31,19 +28,20 @@ export default function ProfileScreen() {
         <Pressable style={styles.closeButton} onPress={handleClose}>
           <Text style={styles.closeButtonText}>Close</Text>
         </Pressable>
-      </Pressable>
-    </Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
+  container: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.4)", // Semi-transparent dark overlay
     justifyContent: "flex-end",
+    backgroundColor: "transparent",
   },
-  topSpacer: {
-    flex: 1, // Creates the clickable blank space at the top
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
   },
   modalCard: {
     backgroundColor: "#FFFFFF",
@@ -56,6 +54,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,
+    zIndex: 1,
   },
   handleBar: {
     width: 40,

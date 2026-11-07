@@ -10,10 +10,9 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* 1. Full-screen absolute backdrop that catches any tap outside */}
+      {/* Tapping anywhere on this dark overlay triggers handleClose */}
       <Pressable style={styles.backdrop} onPress={handleClose} />
 
-      {/* 2. Modal content card anchored at the bottom */}
       <View style={styles.modalCard}>
         <View style={styles.handleBar} />
 
@@ -54,7 +53,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,
-    zIndex: 1,
   },
   handleBar: {
     width: 40,

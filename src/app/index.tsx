@@ -65,9 +65,10 @@ export default function Index() {
     "favs" | "report" | "settings" | "faq"
   >("favs");
 
-  // Dynamic user states (Fixes item #1)
+  // Dynamic user profile states
   const [userName, setUserName] = useState("Student");
-  const [userStudentId, setUserStudentId] = useState("6823765109");
+  const [userStudentId, setUserStudentId] = useState("Loading ID...");
+  const [userFaculty, setUserFaculty] = useState("Thammasat University");
 
   const [userGender, setUserGender] = useState<"all" | "male" | "female">(
     "all",
@@ -100,7 +101,7 @@ export default function Index() {
   const [reportDescription, setReportDescription] = useState<string>("");
   const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
 
-  // Fetch logged-in user details dynamically (Item #1)
+  // Fetch logged-in user details dynamically from profiles table
   useEffect(() => {
     async function loadUserData() {
       try {
@@ -109,16 +110,18 @@ export default function Index() {
         } = await supabase.auth.getUser();
         if (user) {
           if (user.email) setUserName(user.email);
-          const { data: profileData } = await supabase
+
+          const { data: profileData, error } = await supabase
             .from("profiles")
             .select("*")
             .eq("id", user.id)
             .single();
 
-          if (profileData) {
+          if (!error && profileData) {
             if (profileData.full_name) setUserName(profileData.full_name);
             if (profileData.student_id)
               setUserStudentId(profileData.student_id);
+            if (profileData.faculty) setUserFaculty(profileData.faculty);
           }
         }
       } catch (err) {
@@ -128,7 +131,7 @@ export default function Index() {
     loadUserData();
   }, []);
 
-  // Load favorites from Supabase on startup (Item #3)
+  // Load favorites from Supabase on startup
   useEffect(() => {
     async function loadFavorites() {
       try {
@@ -153,7 +156,7 @@ export default function Index() {
     loadFavorites();
   }, []);
 
-  // Fetch live data from Supabase with dynamic rating calculations (Item #2)
+  // Fetch live data from Supabase with dynamic rating calculations
   async function fetchSupabaseRestrooms() {
     try {
       setIsLoadingRestrooms(true);
@@ -348,7 +351,6 @@ export default function Index() {
     }
   };
 
-  // --- TOGGLE & PERSIST FAVORITES (Item #3) ---
   const handleToggleFavorite = async (id: string) => {
     const updatedFavorites = favorites.includes(id)
       ? favorites.filter((favId) => favId !== id)
@@ -371,7 +373,6 @@ export default function Index() {
     }
   };
 
-  // --- REVIEW SUBMISSION WITH LOADING STATE ---
   const handleSubmitReview = async () => {
     if (!reviewSpot) return;
     if (!inputComment.trim()) {
@@ -404,7 +405,6 @@ export default function Index() {
         return;
       }
 
-      // Re-fetch rooms to update live averages
       await fetchSupabaseRestrooms();
 
       Alert.alert("Thank you for your Feedback!");
@@ -418,7 +418,6 @@ export default function Index() {
     }
   };
 
-  // --- PROFILE ISSUE REPORTING & SUPABASE INSERT ---
   const handleProfileIssueSubmit = async () => {
     if (!reportDescription.trim()) {
       Alert.alert(
@@ -463,7 +462,6 @@ export default function Index() {
     }
   };
 
-  // --- NAVIGATE: LOCATE NEAREST OPEN RESTROOM FILTER (US-2 AC3) ---
   const handleLocateNearest = () => {
     if (restrooms.length === 0) return;
 
@@ -769,7 +767,7 @@ export default function Index() {
                 <Text style={styles.userName}>{userName}</Text>
                 <Text style={styles.userRole}>Thammasat Student Account</Text>
                 <Text style={{ fontSize: 13, color: "#64748B" }}>
-                  ID: {userStudentId} • College of Innovation (DX)
+                  ID: {userStudentId} • {userFaculty}
                 </Text>
               </View>
             </View>

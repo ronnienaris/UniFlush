@@ -101,6 +101,23 @@ export default function Index() {
   const [reportDescription, setReportDescription] = useState<string>("");
   const [isSubmittingReport, setIsSubmittingReport] = useState<boolean>(false);
 
+  // Check if session already exists on mount to prevent Vercel login page loops
+  useEffect(() => {
+    async function checkUserSession() {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          setScreen("main");
+        }
+      } catch (err) {
+        console.error("Error checking session:", err);
+      }
+    }
+    checkUserSession();
+  }, []);
+
   // Fetch logged-in user details dynamically from profiles table
   useEffect(() => {
     async function loadUserData() {
